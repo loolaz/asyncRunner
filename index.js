@@ -1,4 +1,4 @@
-'use strict';
+ 'use strict';
 
 /**
 * The asyncRunner works in two ways with a different set of parameters
@@ -43,7 +43,7 @@ module.exports = (function () {
     }
     return async function asyncRunner (...args) {
         let limit = args[0] || 1, tasks = args[1], asyncFunc = args[2], callback = args[3];
-        const queue = [];
+        const queue = [], results = [];
 
         if (args.length === 3) {
             asyncFunc = undefined;
@@ -52,27 +52,27 @@ module.exports = (function () {
         try {
             validate(args);
         } catch (e) {
-            return callback(e);
+            return callback(e, null);
         }
         while (tasks.length > 0) {
             if (queue.length < limit) {
                 queue.push(tasks.shift());
             } else {
                 try {
-                    await promisifyAll(queue, asyncFunc);
+                    results.push(await promisifyAll(queue, asyncFunc));
                 } catch (e) {
-                    return callback(e);
+                    return callback(e, null);
                 }
                 queue.length = 0;
             }
         }
         if (queue.length > 0) {
             try {
-                await promisifyAll(queue, asyncFunc);
+                results.push(await promisifyAll(queue, asyncFunc));
             } catch (e) {
-                return callback(e);
+                return callback(e, null);
             }        
         }
-        callback(null);
+        callback(null, results);
     };
 })();
